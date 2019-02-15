@@ -20,6 +20,7 @@
 \usepackage{algpseudocode}
 
 \newtheorem{myDef}{Definition}
+\newtheorem{myTheo}{Theorem}
 
 \renewcommand{\algorithmicensure}{\textbf{Class }}
 
@@ -68,7 +69,7 @@ We would like to support two basic kind of trajectory queries, namely range quer
    For the points are generally sampled in a given rate in the real world, we could assume that the differences $t_2-t_1, t_3-t_2, ... , t_n- t_(n-1)$ are nearly equal, although we don't require this property in the rest of the paper.
 \end{myDef}
 \begin{myDef}
-  (Integral Distance) Given two trajectories $T_a=[(x_{a1},y_{a1},t_{a1}), (x_{a2},y_{a2},t_{a2}), ..., (x_{am},y_{am},t_{am})]$ and $T_b=(x_{b1},x_{b1},t_{b1}), (x_{b2}, y_{b2}, t_{b2}), ..., (x_{bn}, y_{bn}, t_{bn})$, we define their Integral Distance as below:\\
+  (Integral Distance) Given two trajectories $$T_a=[(x_{a1},y_{a1},t_{a1}), (x_{a2},y_{a2},t_{a2}), ..., (x_{am},y_{am},t_{am})]$$ and $$T_b=(x_{b1},x_{b1},t_{b1}), (x_{b2}, y_{b2}, t_{b2}), ..., (x_{bn}, y_{bn}, t_{bn})$$, we define their Integral Distance as below:\\
   Denote $\hat{t}=\hat{t_a}\bigcup\hat{t_b}=\{t_{a1}, t_{a2}, ..., t_{am}\}\bigcup \{t_{b1}, t_{b2}, ..., t_{bn}\}$, and $\check{t}=[t_1, t_2, ..., t_l]$ as the $\hat{t}$ sorted by its ascendant order. And for $t \in \hat{t}$ define
   $$T_a'(t)=\left\{
              \begin{array}{lr}
@@ -122,14 +123,14 @@ First we define a function which is at the core of this paper.
   $$
 \end{myDef}
 \begin{myDef}
-(MBBC)Given a trajectory $$T=[(x_1,y_1,t_1), (x_2,y_2,t_2), ..., (x_n,y_n,t_n)],$$with the maximum speed v, the MBBC of it is
+(MBBC)Given a trajectory $$T=[(x_1,y_1,t_1), (x_2,y_2,t_2), ..., (x_n,y_n,t_n)],$$with the maximum speed v, the Minimum Bounding Bicone of it is
 $$
 \begin{aligned}
 MBBC(T;v)=Possible\_Cone^+((x_1,y_1),t_1,v)\\
 \bigcap Possible\_Cone^-((x_n,y_n),t_n,v),
 \end{aligned}
 $$
-which is a bicone. %We could expression it by the 3-tuple $$((x_1,y_1,t_1),(x_n,y_n,t_n),v)$$. For the storage cost of the index is relatively small, we could also storage the MBR expressed as $$MBR=(mbrx_{min},mbrx_{max},mbry_{min},mbry_{max})$$ with the MBBC to enforce the pruning power. So we store a 4-tuple $((x_1,y_1,t_1),(x_n,y_n,t_n),v,MBR)$ to express a MBBC for a trajecory.
+which is a bicone. As we can see, the intervening points contributes nothing to the MBBC after the maximum speed is given, so we call this type of MBBC a MBBC of points. %We could expression it by the 3-tuple $$((x_1,y_1,t_1),(x_n,y_n,t_n),v)$$. For the storage cost of the index is relatively small, we could also storage the MBR expressed as $$MBR=(mbrx_{min},mbrx_{max},mbry_{min},mbry_{max})$$ with the MBBC to enforce the pruning power. So we store a 4-tuple $((x_1,y_1,t_1),(x_n,y_n,t_n),v,MBR)$ to express a MBBC for a trajecory.
 \par
 Similarly we define MBBC of two area laid at starting and ending time, expressed as $(\mathcal{A},t_1),(\mathcal{B},t_n)$ to be
 $$
@@ -138,11 +139,12 @@ MBBC(\mathcal{A},\mathcal{B};t_1,t_n,v)=Possible\_Cone^+(\mathcal{A},t_1,v)\\
 \bigcap Possible\_Cone^-(\mathcal{B},t_n,v),
 \end{aligned}
 $$
-which shape would be like two truncated cones, and we still call it MBBC.\par
-Due to the strategy of building the index tree, the $\mathcal{A} and \mathcal{B}$ of each MBBC would be rectangles, which may degenerate into a line segment or a point.
+which shape would be like two truncated cones, so for convenience we still call it MBBC. \par
+We call a MBBC with it's $\mathcal{A} and \mathcal{B}$ both rectangles, which may degenerate into a line segment or a point, as a regular MBBC.
+Due to the strategy of building the index tree, the $\mathcal{A} and \mathcal{B}$ of each MBBC mentioned in this paper would be rectangles. So in the rest of paper we assume every MBBC is regular without extra explanation.
 \end{myDef}
 
-Although we could define a MBBC by such parameters, in implementation, the MBBC should also store the intersection point of the projection of the MBBC on x-t surface and y-t surface to avoid calculation on pruning, which will be discussed in Chapter \ref{sec:query}. We call the four intersection points as nodes, where xnodes stand for those on the y-t suface, and ynodes the ones on x-t surface. The pseudo code of MBBC and MBR would be like \ref{alg:class}.
+%Although we could define a MBBC by such parameters, in implementation, the MBBC should also store the intersection point of the projection of the MBBC on x-t surface and y-t surface to avoid calculation on pruning, which will be discussed in Chapter \ref{sec:query}. We call the four intersection points as nodes, where xnodes stand for those on the y-t suface, and ynodes the ones on x-t surface. The pseudo code of MBBC and MBR would be like \ref{alg:class}.
 
 \begin{algorithm}[ht]
 %\floatname{algorithm}{CLASS}
@@ -167,9 +169,9 @@ Although we could define a MBBC by such parameters, in implementation, the MBBC 
 \Ensure MBBC
     \State A:MBR //start area, dimension=2
     \State B:MBR //end area, dimension=2
-    \State xnodes:MBR //this is not really a MBR, but the two Points 
-    \State ynodes:MBR //this is not really a MBR, but the two Points 
-    \State mbr\_enabled:Bool //have exact MBR info
+    %\State xnodes:MBR //this is not really a MBR, but the two Points
+    %\State ynodes:MBR //this is not really a MBR, but the two Points
+    \State mbr\_enabled:Bool //whether do we have exact MBR info
     \State mbr:MBR //the MBR info
     \Function{Calculate\_Nodes}()
     \EndFunction
@@ -192,7 +194,8 @@ The shape of the MBBC of a trajectory would like Figure \ref{fig:matlab}. Notice
   \label{fig:matlab}
 \end{figure}
 
-\section{Building Index on BCs}
+
+\section{Building Index on MBBCs}
 MBBC is a tight expression to the raw trajectories, but the use of the maximum velocity leads to some problems when we want to combine multiple MBBCs to construct a RTree-like structure, as the slope of different MBBCs are different. To overcome this problem, we would combine multiple MBBC as they all moving at the maximum speed at this time period.
 \subsection{Global Index}
 We choose to build a $B^+$-Tree or a Hash table on the time axis, and for each time period(which is a leaf of the $B^+$-Tree or a value of the Hash table), we would build a RTree-like index structure called $R^2$-Tree. The square means that it use the range informations both at the start time and at the end time. We are doing this for four reasons.
@@ -229,80 +232,57 @@ Although we use MBBCs to express the set of trajectories, we can still use MBR t
 
 
 \section{Querying using Index} \label{sec:query}
-Intuitively, the calculation of deciding whether a query box intersects with a MBBC, and the calculation of calculating the minimum distance from a MBBC to a MBR or another MBBC seems to be time costing. That is what people generally argues about for an oriented bounding box system, which is widely discussed in the realm of collision detection.(They call the MBR along axes as AABB method, and not along axes as OBB method.) But these calculation of MBBC could be tolerable using the property of the bicone.\par
+As we mainly support range and KNN query, the most important questions we have to answer when using the index are these two:\\
+\indent 1. How to decide whether a MBBC intersects with a MBR with the least computation cost?\\
+\indent 2. How to calculate the minimum and maximum distance between two MBBCs with low computation cost?\par
+Intuitively, these calculations seems to be time costing. That is what people generally argues about for an oriented bounding box system, which is widely discussed in the realm of collision detection.(They call the MBR along axes as AABB method, and not along axes as OBB method.) But these calculation of MBBC could be tolerable using the property of the bicones.\par
 
-Consider first
+\subsection{Doing Range Query}
 
-For a query box $[x_1,x_2] \times [y_1,y_2] \times [t_1,t_2]$ in time period $[t_0,t_n]$, for the internal nodes, we first calculate
+Given a query box MBR, we first have to prune out most of really irrelevant data using most simple calculation, so we first calculate
 $$\mathcal{A} = MBR(Possible\_Area(t_0;[x1,x2] \times [y1,y2], t_2, v)$$
 and
-$$\mathcal{B} = MBR(Possible\_Area(t_n;[x_1,x_2] \times [y_1,y_2], t_1, v)$$
-and prune all the MBBCs that the starting area don't intersect with $\mathcal{A}$ or ending area don't intersects with $\mathcal{B}$. This is the first step pruning. If we have the exact MBR message, we can also use the message of MBRs to do one more round of pruning.\par
-For each node that passed the first step pruning, we use the message of xnodes and ynodes to do second part pruning.
+$$\mathcal{B} = MBR(Possible\_Area(t_n;[x_1,x_2] \times [y_1,y_2], t_1, v).$$
+Using this, all the MBBCs that the starting area don't intersect with $\mathcal{A}$ or ending area don't intersects with $\mathcal{B}$ would be pruned easily. If we have the exact MBR message, we can instead use the message of MBRs to do this round of pruning by checking whether the MBR intersects with the query box. \par
+After the first level of pruning, we can use some more costy algorithm for the most of data is already pruned out. So we would start to check whether the MBBC actually intersects with the MBR.\par
+A good property of bicone is that when looking from any direction which is perpendicular to t-axis, the shape of the bicone is a parallelogram with the same slope (which is the value of maximum speed v). We could easily proof that if a MBBC intersects with a MBR, then their projections on x-t plane, y-t plane and x-y plane also intersect. We would use this property for the second stage of pruning, named Projection Pruning. \par
+
+Using the fact that the absolute value of the slope of each edge of the parallelogram is the same, we could transform the condition stated above into some simple comparison, as shown in Algorithm \ref{alg:proprune}. Although there could be more pruning, we should consider that the exact computation of collision is unacceptable, and some false positive is acceptable.
 \begin{algorithm}
-\caption{NodePruning} \label{alg:nodeprune}
+\caption{ProjectionPruning} \label{alg:proprune}
 \begin{algorithmic}[1]
-\Function{nodePrune}{list:List[MBBC],box:MBR,maxspeed:Double}
-    \ForAll{bc \textbf{in} list}
-        \State flag1:Int = -1//whether low xnode is interested
-        \State flag2:Int = -1//whether high xnode is interested
-        \State flag3:Int = -1//whether low ynode is interested
-        \State flag4:Int = -1//whether high ynode is interested
-        \If{bc.high.t-(bc.high.x-box.low.x)*v<box.high.t}
-            \State flag1:Bool = 1 
-        \EnfIf
-        \If{(box.high.x-bc.low.x)*v>box.low.t}
-            \State flag2:Bool = 1
-        \EnfIf
-        ixnode:Point // the xnode that we are interested
-        \If{flag1=1 \textbf{and } flag2=1}
-            \State \textbf{continue}
-        \ElseIf{flag1=1}
-            \State ixnode=bc.xnode.low
-        \ElseIf{flag2=1}
-            \State ixnode=bc.xnode.high
-        \EnfIf
-        
-
-        \If{(bc.high.t-(bc.high.y-box.low.y)*v<box.high.t}
-            \State flag3:Bool = 1
-        \EnfIf
-        \If{(box.high.y-bc.low.y)*v>box.low.t}
-            \State flag4:Bool = 1
-        \EnfIf
-        iynode:Point // the ynode that we are interested
-        \If{flag3=flag4}
-            \State \textbf{continue}
-        \ElseIf{flag3=1}
-            \State iynode=bc.ynode.low
-        \ElseIf{flag4=1}
-            \State iynode=bc.ynode.high
-        \EnfIf
-
-        \If{box.low.t<ixnode.t<box.high.t}
-            \If{ixnode.x>box.high.x}
-                \State list.remove(bc)
-                \State \textbf{continue}
-            \EndIf
-        \ElseIf{ixnode.t>box.high.t \textbf{and} ixnode.}
-        \EndIf
-    \EndFor 
+\Function{ProjectionPruning}{bc:MBBC, box:MBR, maxspeed:Double}
+    \State t0:Double = box.low.t-bc.A.t
+    \State t1:Double = box.high.t-bc.A.t
+    \State t:Double = bc.B.t-bc.A.t
+    \State d:Double = maxspeed*t
+    \State a:Double
+    \State b:Double
+    \If{bc.A.x+bc.B.x>box.high.x+box.low.x}
+        \State a=bc.A.x-box.high.x
+        \State b=bc.B.x-box.high.x
+    \Else
+        \State a=box.low.x-bc.A.x
+        \State b=box.low.x-bc.B.x
+    \EndIf
+    \If{a+b>d or a*t>d*t1 or b*t>d*(t-t0)}
+        \State \textbf{return} false
+    \EndIf
+    \If{bc.A.y+bc.B.y>box.high.y+box.low.y}
+        \State a=bc.A.y-box.high.y
+        \State b=bc.B.y-box.high.y
+    \Else
+        \State a=box.low.y-bc.A.y
+        \State b=box.low.y-bc.B.y
+    \EndIf
+    \If{a+b>d or a*t>d*t1 or b*t>d*(t-t0)}
+        \State \textbf{return} false
+    \EndIf
+    \State \textbf{return} true
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
 
-
-\begin{algorithm}
-\caption{Check if a MBBC of points intersects with a bounding box} \label{alg:intersect}
-\begin{algorithmic}[1]
-\Function{Intersect}{a:pointMBBC, b:MBR\_3d}
-\State
-\EndFunction
-\end{algorithmic}
-\end{algorithm}
-
-The two methods would both produce some false positive, but it's necessary in order to reduce the calculation cost.
-\par
 
 \section{Implementation on Spark}
 In this section we will show how to implement the two-level of global index and one level of local index in a widely used distributed platform, namely Apache Spark.\par
