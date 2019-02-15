@@ -1,0 +1,333 @@
+%
+% The first command in your LaTeX source must be the \documentclass command.
+\documentclass[sigplan]{acmart}
+
+%
+% defining the \BibTeX command - from Oren Patashnik's original BibTeX documentation.
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08emT\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\copyrightyear{2019}
+\acmYear{2019}
+
+\acmConference[]{}{}{}
+\acmBooktitle{}
+\acmPrice{}
+\acmDOI{}
+\acmISBN{}
+\usepackage{indentfirst}
+\usepackage{amsthm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\newtheorem{myDef}{Definition}
+
+\renewcommand{\algorithmicensure}{\textbf{Class }}
+
+\begin{document}
+\title{Minimum Bounding Bicone: a new Minimum Bounding Box System for Trajectory Data}
+\author{Liu Yinpei}
+\email{lyp_bobi@yahoo.com}
+\affiliation{%
+  \institution{Shanghai Jiaotong University}
+}
+\begin{abstract}
+In the widely used Minimun Bounding Rectangle(MBR) system, if we want to express a moving object in a given time period, we have to form a 3-dimension rectangle that bound it, namely $[x_1,x_2] × [y_1,y_2] × [t_1,t_2]$. And when doing different kinds of query on the trajectories, we actually first use message of their MBRs to do some pruning to avoid the full scan of the database and the complex computation of the exact distance between trajectories. In this paper we propose a new method called Minimum Bounding Bicone (to make difference with Minimum Bounding Box, we abbreviate this as MBBC), which we would show to be a more precise description of the original trajectory points, which in turn would have stronger pruning power.
+\end{abstract}
+
+\maketitle
+
+\section{Basic Observations and Hypotheses}
+The index structure of spatial data is somehow matured now, as index structures like R-Tree, k-d Tree, space-filling curves, their variants, and other index structure have shown their efficiency on different realms in application. However, when comes to trajectory data, we find that these index structure can be further grained to become faster using the additional information and insight of real data. For trajectory data, we have some basic observations that is widely accepted: \\
+\indent 1. Moving objects have only limited velocity, and the distance of a pair of adjacent points in one trajectory is hardly bounded according to the time difference of the points.\\
+\indent 2. Enormous trajectory data is being produced every day, which naturally raised the necessity to use distributed databases and analysis tools.\\
+\indent 3. The calculation of exact trajectory distance requires complex computation, so avoiding the exact calculation by pruning is very important.
+\indent 4. The data are generally inserted in their time order, and updates to the past data is rarely needed.\\
+\par
+So there are some basic hypotheses that we assume is true.\\
+\indent 1. Most moving objects we are handling share a common acceptable speed bounds, like 30km/h for walking people, 200km/h for cars, 70km/h for ships. When handling spatio-temporal databases consists of two or more kinds of moving objects, build different indexes for different kinds is generally a good idea.\\
+\indent 2. We assume the trajectory data is stored in a distributed environment like HDFS, which generally load a larger part of the data in a single I/O action. (For example, 64MB per block in HDFS instead of 8KB per page in Postgre SQL.)\\
+\indent 3. We have to do calculation on the trajectories instead of the points in the trajectories, so the real computation cost of the queries is polynomially higher than queries on the points.\par
+
+Studies on trajectories have proposed the inefficiency of Minimum Bounding Boxes for a long time \cite{pfoser2000novel}, while good substitution to it are never provided to our knowledge. In this article, we would propose Minimum Bounding Bicone as a new bounding system for trajectory data.\par
+
+
+\section{Queries Supported}
+We would like to support two basic kind of trajectory queries, namely range query and kNN query. Both of the query have multiple variants and different variants may require computing costs with polynomial level difference, so we would first give our definition of the query. \par
+\begin{myDef}
+  (ST-point) A Spatio-temporal point(abbreviate as ST-point) is a 3-tuple (x,y,t). The x and y stand for the location of the point, and the t stand for the time that the location is recorded.
+\end{myDef}
+\begin{myDef}
+  (Trajectory) A trajectory is a list of ST-points sorted by their time value in ascendant order, namely
+
+     $$[(x_1,y_1,t_1),(x_2,y_2,t_2),...,(x_n,y_n,t_n)], $$
+     $$t_1 \leqq t_2 \leqq t_3 \leqq ... \leqq t_n .$$
+
+   The trajectory is the sampled points of the real trajectory, which is in the form of the function
+   $$T^{real}: t \Rightarrow (x,y), t\in [t_1,t_n].$$
+   Notice that we assume we know exactly the starting and ending time of the real trajectory, namely $t_1$ and $t_n$.\\
+   For the points are generally sampled in a given rate in the real world, we could assume that the differences $t_2-t_1, t_3-t_2, ... , t_n- t_(n-1)$ are nearly equal, although we don't require this property in the rest of the paper.
+\end{myDef}
+\begin{myDef}
+  (Integral Distance) Given two trajectories $T_a=[(x_{a1},y_{a1},t_{a1}), (x_{a2},y_{a2},t_{a2}), ..., (x_{am},y_{am},t_{am})]$ and $T_b=(x_{b1},x_{b1},t_{b1}), (x_{b2}, y_{b2}, t_{b2}), ..., (x_{bn}, y_{bn}, t_{bn})$, we define their Integral Distance as below:\\
+  Denote $\hat{t}=\hat{t_a}\bigcup\hat{t_b}=\{t_{a1}, t_{a2}, ..., t_{am}\}\bigcup \{t_{b1}, t_{b2}, ..., t_{bn}\}$, and $\check{t}=[t_1, t_2, ..., t_l]$ as the $\hat{t}$ sorted by its ascendant order. And for $t \in \hat{t}$ define
+  $$T_a'(t)=\left\{
+             \begin{array}{lr}
+             T_a(t), t \in \hat{t_a} \\
+             T_a(t_{ak})+ (T_a(t_{a(k+1)})-T_a(t_{ak}))* \frac{t-t_{ak}}{t_{a(k+1)}-t_{ak}}, \\
+             \indent  t \in [t_{a1}, t_{am}], t_{ak}<t<t_{a(k+1)} \\
+             T_a(t_{a1}), t \in [t_{b1},t_{bn}] \setminus [t_{a1},t_{am}], t< t_{a1} \\
+             T_a(t_{am}), t \in [t_{b1},t_{bn}] \setminus [t_{a1},t_{am}], t< t_{am}
+             \end{array}
+    \right.$$
+  and $T_b'(t)$ similarly. Then the Integral Distance is
+  $$
+  \begin{aligned}
+  d(&T_a,T_b)=\\
+  &\sum_{i \in \{1, 2, ..., l-1\}} \frac{1}{2} (T_a'(t_i)-T_b'(t_i)+T_a'(t_{i+1})-T_b'(t_{i+1}))\\
+  &\indent\indent\indent\indent\indent\indent\indent\indent\indent\indent*(t_{i+1}-t_i).
+  \end{aligned}
+  $$
+  This is a natural extension of the real Integral Distance
+  $$\int_{t_1}^{t_l}(T_{a}^{real}-T_{b}^{real})dt.$$
+\end{myDef}
+\begin{myDef}
+  (Range Query)Given a query box $$[x_1,x_2] \times [y_1,y_2] \times [t_1,t_2],$$return all the trajectories that "intersect", which means having at least one point inside, this box.
+\end{myDef}
+\begin{myDef}
+  (kNN Query)Given a trajectory which not necessarily contained in the database, and find the trajectories which have the k smallest Integral distance to the given trajectory in the database, which may contain itself.
+\end{myDef}
+
+\section{Caculation of MBBC}
+First we define a function which is at the core of this paper.
+\begin{myDef}
+  (Possible Area) Denote $\mathcal{C}$ as the full spatial space, which is invariant over time. Given a spatial area $\mathcal{A}$(which could degenerate into a point) and a time stamp $t_0$, we define the function $Possible\_Area()$ which calculate the Possible\_Area position at a given time $t$ if the object could at most move at a velocity $v$.
+  $$
+  \begin{aligned}
+  %Possible\_Area:\mathcal{R}&\Rightarrow\mathcal{C},\\
+  Possible\_Area(t;\mathcal{A},t_0,v)&= \{A+v|t-t_0|*\vec{n} \big| ||\vec{n}||=1\}
+  \end{aligned}
+  $$
+\end{myDef}
+\begin{myDef}
+  (Possible Cone) We further define the function to calculate all the Possible\_Area points as Possible\_Cone(), which could be further divide extend to $Possible\_Cone^+$ and $Possible\_Cone^-$ as tow nappes of the double cone.
+  $$
+  \begin{aligned}
+  Possible\_&Cone(\mathcal{A},t_0,v)=\\
+  &\{Possible\_Area(t;\mathcal{A},t_0,v)\times t\}\\
+  Possible\_&Cone^+(\mathcal{A},t_0,v)=\\
+  &\{Possible\_Area(t;\mathcal{A},t_0,v)\times t \big| t\geq t_0\}\\
+  Possible\_&Cone^-(\mathcal{A},t_0,v)=\\
+  &\{Possible\_Area(t;\mathcal{A},t_0,v)\times t \big| t\leq t_0\}
+  \end{aligned}
+  $$
+\end{myDef}
+\begin{myDef}
+(MBBC)Given a trajectory $$T=[(x_1,y_1,t_1), (x_2,y_2,t_2), ..., (x_n,y_n,t_n)],$$with the maximum speed v, the MBBC of it is
+$$
+\begin{aligned}
+MBBC(T;v)=Possible\_Cone^+((x_1,y_1),t_1,v)\\
+\bigcap Possible\_Cone^-((x_n,y_n),t_n,v),
+\end{aligned}
+$$
+which is a bicone. %We could expression it by the 3-tuple $$((x_1,y_1,t_1),(x_n,y_n,t_n),v)$$. For the storage cost of the index is relatively small, we could also storage the MBR expressed as $$MBR=(mbrx_{min},mbrx_{max},mbry_{min},mbry_{max})$$ with the MBBC to enforce the pruning power. So we store a 4-tuple $((x_1,y_1,t_1),(x_n,y_n,t_n),v,MBR)$ to express a MBBC for a trajecory.
+\par
+Similarly we define MBBC of two area laid at starting and ending time, expressed as $(\mathcal{A},t_1),(\mathcal{B},t_n)$ to be
+$$
+\begin{aligned}
+MBBC(\mathcal{A},\mathcal{B};t_1,t_n,v)=Possible\_Cone^+(\mathcal{A},t_1,v)\\
+\bigcap Possible\_Cone^-(\mathcal{B},t_n,v),
+\end{aligned}
+$$
+which shape would be like two truncated cones, and we still call it MBBC.\par
+Due to the strategy of building the index tree, the $\mathcal{A} and \mathcal{B}$ of each MBBC would be rectangles, which may degenerate into a line segment or a point.
+\end{myDef}
+
+Although we could define a MBBC by such parameters, in implementation, the MBBC should also store the intersection point of the projection of the MBBC on x-t surface and y-t surface to avoid calculation on pruning, which will be discussed in Chapter \ref{sec:query}. We call the four intersection points as nodes, where xnodes stand for those on the y-t suface, and ynodes the ones on x-t surface. The pseudo code of MBBC and MBR would be like \ref{alg:class}.
+
+\begin{algorithm}[ht]
+%\floatname{algorithm}{CLASS}
+%\newcommand{\algorithmname}{CLASS}
+%\renewcommand{\thealgorithm}{}
+\caption{Class Statement} \label{alg:class}
+
+
+
+\begin{algorithmic}[0]
+\Ensure Point
+    \State dimension:Int
+    \State x:Double
+    \State y:Double
+    \State t:Double
+
+\Ensure MBR
+    \State dimension:Int
+    \State low:Point //this Point stores the lower value of x,y and t for this MBR
+    \State high:Point //this Point stores the higher value of x,y and t for this MBR
+
+\Ensure MBBC
+    \State A:MBR //start area, dimension=2
+    \State B:MBR //end area, dimension=2
+    \State xnodes:MBR //this is not really a MBR, but the two Points 
+    \State ynodes:MBR //this is not really a MBR, but the two Points 
+    \State mbr\_enabled:Bool //have exact MBR info
+    \State mbr:MBR //the MBR info
+    \Function{Calculate\_Nodes}()
+    \EndFunction
+\Ensure pointMBBC \textbf{extends} MBBC
+    \Function{x}{}
+    \State \textbf{return} A.x1
+    \EndFunction
+    \Function{y}{}
+    \State \textbf{return} A.y1
+    \EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+The shape of the MBBC of a trajectory would like Figure \ref{fig:matlab}. Notice that the volume of a cone is 1/3 of the volume of the cylinder, which would obviously result in stronger pruning power.\\
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\linewidth]{matlab.jpg}
+  \caption{Plotted by MATLAB, with speed 1, start point (0,0,0), and end point (4,0,5)}
+  \Description{matlab bicone}
+  \label{fig:matlab}
+\end{figure}
+
+\section{Building Index on BCs}
+MBBC is a tight expression to the raw trajectories, but the use of the maximum velocity leads to some problems when we want to combine multiple MBBCs to construct a RTree-like structure, as the slope of different MBBCs are different. To overcome this problem, we would combine multiple MBBC as they all moving at the maximum speed at this time period.
+\subsection{Global Index}
+We choose to build a $B^+$-Tree or a Hash table on the time axis, and for each time period(which is a leaf of the $B^+$-Tree or a value of the Hash table), we would build a RTree-like index structure called $R^2$-Tree. The square means that it use the range informations both at the start time and at the end time. We are doing this for four reasons.
+\indent The first reason is the inefficiency of RTree and its variants on 3 or higher dimensions. This basically comes from the fact that the ratio of volume of the bounding boxes in comparison with the real volume grows exponentially with the increase of dimension.
+\indent The second reason is that the query on the trajectories generally only involves trajectories in a given time period instead of using time information as a measurement of the relation between trajectories.
+\indent The third reason is that things can move forth and back in spatial axes, but can only move forth in time axes. Using $B+$-Tree or Hash table could utilize this knowledge better.
+\indent And the last reason is that scholars have agreed on the necessity of cutting long trajectories into small segments to avoid their MBRs to grow too large. We would also use this method to avoid producing large MBBCs, and this method basically corresponds to the division of time axis.\par
+
+We suggest two ways to build the first level of index upon time axis. The first one is to divide the time into segments of a given length, for example, one hour. Then we can access the $R^2$-Tree of the given time period by Hash Table. But this method may lead to data imbalance, for example, the car trajectories during the day is more than the trajectories during the night. The imbalance of data would not only lead to the imbalance of the whole tree, but also the imbalance of pruning power, that is, if there are a lot of trajectories in a given time period, we would want the time period to be smaller or the MBBCs would be overlapped with others frequently and make it hard to pruning using spatial information. So we suggest a second way, which is to build a $B^+$-Tree where each leaf node shares almost the same number of trajectory points. For general data, this method would result in longer querying time, but for skewed data, this method may produce better result.\par
+
+In each time period, if the time period is $[t_1,t_n]$, we would build the so called $R^2$-Tree, which by structure is a binary tree, in a simple divide and conquer manner. At start, we have a root node which record all the trajectories in $$MBBC(\mathcal{C},\mathcal{C};t_1,t_n,v).$$ Then we would either do a "start division" or a "end division", the process would be similar to the construction of k-d Tree.\par
+
+For start division, we pick an area $\mathcal{A}$ and calculate the $$\mathcal{B}=MBR(Possible\_Area(t;\mathcal{A},t_1,v)).$$
+Then we calculate $$\mathcal{B'}=MBR(Possible\_Area(t;\mathcal{C} \setminus \mathcal{A},t_1,v))$$
+which is the area that an object can reach if it start in $\mathcal{C}\setminus \mathcal{A}$. So the left node of the root is the trajectories in $$MBBC(\mathcal{A},\mathcal{B};t_1,t_n,v),$$ and right node is the trajectories in $$MBBC(\mathcal{C}\setminus \mathcal{A},\mathcal{B'};t_1,t_n,v).$$ The end division is just the same except we first pick an area containing ending points, and calculate back the Possible\_Area starting position.\par
+
+The area selection is just like the k-d Tree, where we first select an axis, and for the axis, we select the median point and divide the plain into two parts which would divide the data into two sets containing equal number of trajectories. For there are two spatial dimensions, we have four division strategies, namely start/end division along x/y axis.\par
+
+Due to the division strategy, the starting and ending area of MBBCs would always be rectangle, which we mentioned before. This makes calculation of checking intersection easier.
+
+In every step, we would choose the one from the four strategies whose child nodes contains least volume. So although the MBBCs are overlapping each other inevitably, we could still try to avoid the MBBCs to overlap with a query box, which intuitively would lead to better pruning result. If two or more of the strategies have the same child nodes volume, we would randomly pick one.\par
+% We would use them in circle on different level of the tree, for example, start division along x-axis for the first level of the tree, end division along x-axis on the second, start division along y-axis for the third level, end divisions along y-axis for the fourth level, and continue with the descendent levels.
+The division procedure would end when each partition is small enough, which generally should be decide by the platform, for example, 64MB or 128MB for HDFS. If data update is needed, we would suggest to use only 40\% to 80\% of the maximum capacity of a leaf node in case their would be more data to insert. As stated earlier, we suppose that we don't have to change the past data a lot, so this structure would generally be good enough. \par
+
+The leaf node of the $R^2$-Tree would contain these messages: full start rectangle, full end rectangle, actual start rectangle, actual end rectangle, actual maximum speed, and the reference to the MBBCs of the contained trajectories. the difference between full start rectangle and the actual start rectangle is that the actual start rectangle is the actual MBR of the starting points, while the start rectangle records the area that $R^2$-Tree allocated to this leaf. The difference is that if we want to decide whether a trajectory belongs to this leaf, we use actual start rectangle to prune this leaf, while if we want to insert data, we use the full start rectangle to decide which leaf it belongs to, so when inserting data, we don't have to create new leaf nodes. \par
+
+
+\subsection{Local Index}
+A shortage of the $R^2$-Tree is that the real velocity of the trajectories is transparent in the internal nodes, as we just use the maximum velocity for the internal nodes. But as the modern distributed system tend to do I/O action in bulk mode, in other word, read a big bulk of data, like 64MB in HDFS, for one I/O action, instead of the classical mode of reading a page of 8KB or something like that each time. So now we don't have to consider the I/O cost at the leaf-side of the index tree too much. Instead, we just use the first level of index to find the related partition of the data, and load all these partition into memory for further processing. And the second liar of the index, which is referred as "local index" in multiple papers, was build in memory for further pruning and retrieval. This just basically allows us to overcome the shortage of MBBC method and utilize its full power. \par
+The local index is just like the Global index, the only difference is that when use the maximum speed of this partition(which is recorded as "actual maximum speed" in global index) to build the $R^2$-Tree. At the leaf nodes, they don't directly contain the data, but still the reference to the data and the MBBC, so we could do the most specific pruning.
+
+\subsection{MBR Construction(Optional)}
+Although we use MBBCs to express the set of trajectories, we can still use MBR to enforce the pruning power. The MBR of each tree node, or each MBBC, could be calculated using a bottom-up methods, which simply combines the MBRs of it childs. But because we don't use MBR to build the tree, we have to calculate the exact MBR from every leaf node, which lead to read and analysis the whole data once more, thus lead to higher index-construction time.
+
+
+\section{Querying using Index} \label{sec:query}
+Intuitively, the calculation of deciding whether a query box intersects with a MBBC, and the calculation of calculating the minimum distance from a MBBC to a MBR or another MBBC seems to be time costing. That is what people generally argues about for an oriented bounding box system, which is widely discussed in the realm of collision detection.(They call the MBR along axes as AABB method, and not along axes as OBB method.) But these calculation of MBBC could be tolerable using the property of the bicone.\par
+
+Consider first
+
+For a query box $[x_1,x_2] \times [y_1,y_2] \times [t_1,t_2]$ in time period $[t_0,t_n]$, for the internal nodes, we first calculate
+$$\mathcal{A} = MBR(Possible\_Area(t_0;[x1,x2] \times [y1,y2], t_2, v)$$
+and
+$$\mathcal{B} = MBR(Possible\_Area(t_n;[x_1,x_2] \times [y_1,y_2], t_1, v)$$
+and prune all the MBBCs that the starting area don't intersect with $\mathcal{A}$ or ending area don't intersects with $\mathcal{B}$. This is the first step pruning. If we have the exact MBR message, we can also use the message of MBRs to do one more round of pruning.\par
+For each node that passed the first step pruning, we use the message of xnodes and ynodes to do second part pruning.
+\begin{algorithm}
+\caption{NodePruning} \label{alg:nodeprune}
+\begin{algorithmic}[1]
+\Function{nodePrune}{list:List[MBBC],box:MBR,maxspeed:Double}
+    \ForAll{bc \textbf{in} list}
+        \State flag1:Int = -1//whether low xnode is interested
+        \State flag2:Int = -1//whether high xnode is interested
+        \State flag3:Int = -1//whether low ynode is interested
+        \State flag4:Int = -1//whether high ynode is interested
+        \If{bc.high.t-(bc.high.x-box.low.x)*v<box.high.t}
+            \State flag1:Bool = 1 
+        \EnfIf
+        \If{(box.high.x-bc.low.x)*v>box.low.t}
+            \State flag2:Bool = 1
+        \EnfIf
+        ixnode:Point // the xnode that we are interested
+        \If{flag1=1 \textbf{and } flag2=1}
+            \State \textbf{continue}
+        \ElseIf{flag1=1}
+            \State ixnode=bc.xnode.low
+        \ElseIf{flag2=1}
+            \State ixnode=bc.xnode.high
+        \EnfIf
+        
+
+        \If{(bc.high.t-(bc.high.y-box.low.y)*v<box.high.t}
+            \State flag3:Bool = 1
+        \EnfIf
+        \If{(box.high.y-bc.low.y)*v>box.low.t}
+            \State flag4:Bool = 1
+        \EnfIf
+        iynode:Point // the ynode that we are interested
+        \If{flag3=flag4}
+            \State \textbf{continue}
+        \ElseIf{flag3=1}
+            \State iynode=bc.ynode.low
+        \ElseIf{flag4=1}
+            \State iynode=bc.ynode.high
+        \EnfIf
+
+        \If{box.low.t<ixnode.t<box.high.t}
+            \If{ixnode.x>box.high.x}
+                \State list.remove(bc)
+                \State \textbf{continue}
+            \EndIf
+        \ElseIf{ixnode.t>box.high.t \textbf{and} ixnode.}
+        \EndIf
+    \EndFor 
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+\caption{Check if a MBBC of points intersects with a bounding box} \label{alg:intersect}
+\begin{algorithmic}[1]
+\Function{Intersect}{a:pointMBBC, b:MBR\_3d}
+\State
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+The two methods would both produce some false positive, but it's necessary in order to reduce the calculation cost.
+\par
+
+\section{Implementation on Spark}
+In this section we will show how to implement the two-level of global index and one level of local index in a widely used distributed platform, namely Apache Spark.\par
+In Spark, there are naturally two levels of storage. The first level is RDD, which is open to the users, and stand for the data to be analysed. The second level is partition. Each RDD is divided into many partitions which is about 64MB each to store in HDFS, and when Spark have to analysis the data in a RDD, it just read the related partition to reduce I/O cost. The partition is generally transparent to users. The RDD is a structure optimized for analysis, so the insertion and deletion cost are very high.\par
+Recent studies have proposed a widely used method called two-level index, which refers to a structure that use a global index to manage different partitions, and use a local index to handle the data inside a single partition.\par
+Instead of just adopting the two-level index structure, we extend it into a three-level index using the property of time axis. This method would help us to append new data into the data set and the update of index more easily, which cater to the real application better.\par
+At the top level, instead of represent the whole data as one RDD, we use a combination of RDDs to store data. Each RDD stands for a leaf node of the $B^+$-Tree or a hash value of Hash Map in the time axis of global index.
+
+
+
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{sample-base}
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
