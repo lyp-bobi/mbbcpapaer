@@ -1,0 +1,115 @@
+%%% -*-BibTeX-*-
+%%% Do NOT edit. File created by BibTeX with style
+%%% ACM-Reference-Format-Journals [18-Jan-2012].
+
+\begin{thebibliography}{6}
+
+%%% ====================================================================
+%%% NOTE TO THE USER: you can override these defaults by providing
+%%% customized versions of any of these macros before the \bibliography
+%%% command.  Each of them MUST provide its own final punctuation,
+%%% except for \shownote{}, \showDOI{}, and \showURL{}.  The latter two
+%%% do not use final punctuation, in order to avoid confusing it with
+%%% the Web address.
+%%%
+%%% To suppress output of a particular field, define its macro to expand
+%%% to an empty string, or better, \unskip, like this:
+%%%
+%%% \newcommand{\showDOI}[1]{\unskip}   % LaTeX syntax
+%%%
+%%% \def \showDOI #1{\unskip}           % plain TeX syntax
+%%%
+%%% ====================================================================
+
+\ifx \showCODEN    \undefined \def \showCODEN     #1{\unskip}     \fi
+\ifx \showDOI      \undefined \def \showDOI       #1{#1}\fi
+\ifx \showISBNx    \undefined \def \showISBNx     #1{\unskip}     \fi
+\ifx \showISBNxiii \undefined \def \showISBNxiii  #1{\unskip}     \fi
+\ifx \showISSN     \undefined \def \showISSN      #1{\unskip}     \fi
+\ifx \showLCCN     \undefined \def \showLCCN      #1{\unskip}     \fi
+\ifx \shownote     \undefined \def \shownote      #1{#1}          \fi
+\ifx \showarticletitle \undefined \def \showarticletitle #1{#1}   \fi
+\ifx \showURL      \undefined \def \showURL       {\relax}        \fi
+% The following commands are used for tagged output and should be
+% invisible to TeX
+\providecommand\bibfield[2]{#2}
+\providecommand\bibinfo[2]{#2}
+\providecommand\natexlab[1]{#1}
+\providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[\protect\citeauthoryear{Ding, Chen, Gao, Jensen, and Bao}{Ding
+  et~al\mbox{.}}{2018}]%
+        {ding2018ultraman}
+\bibfield{author}{\bibinfo{person}{Xin Ding}, \bibinfo{person}{Lu Chen},
+  \bibinfo{person}{Yunjun Gao}, \bibinfo{person}{Christian~S Jensen}, {and}
+  \bibinfo{person}{Hujun Bao}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{UlTraMan: A unified platform for big trajectory
+  data management and analytics}.
+\newblock \bibinfo{journal}{\emph{Proceedings of the VLDB Endowment}}
+  \bibinfo{volume}{11}, \bibinfo{number}{7} (\bibinfo{year}{2018}),
+  \bibinfo{pages}{787--799}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Pfoser, Jensen, Theodoridis,
+  et~al\mbox{.}}{Pfoser et~al\mbox{.}}{2000}]%
+        {pfoser2000novel}
+\bibfield{author}{\bibinfo{person}{Dieter Pfoser}, \bibinfo{person}{Christian~S
+  Jensen}, \bibinfo{person}{Yannis Theodoridis}, {et~al\mbox{.}}}
+  \bibinfo{year}{2000}\natexlab{}.
+\newblock \showarticletitle{Novel approaches to the indexing of moving object
+  trajectories.}. In \bibinfo{booktitle}{\emph{VLDB}}.
+  \bibinfo{pages}{395--406}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Roussopoulos, Kelley, and
+  Vincent}{Roussopoulos et~al\mbox{.}}{1995}]%
+        {roussopoulos1995nearest}
+\bibfield{author}{\bibinfo{person}{Nick Roussopoulos}, \bibinfo{person}{Stephen
+  Kelley}, {and} \bibinfo{person}{Fr{\'e}d{\'e}ric Vincent}.}
+  \bibinfo{year}{1995}\natexlab{}.
+\newblock \showarticletitle{Nearest neighbor queries}. In
+  \bibinfo{booktitle}{\emph{ACM sigmod record}}, Vol.~\bibinfo{volume}{24}.
+  ACM, \bibinfo{pages}{71--79}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Shang, Li, and Bao}{Shang
+  et~al\mbox{.}}{2018}]%
+        {shang2018dita}
+\bibfield{author}{\bibinfo{person}{Zeyuan Shang}, \bibinfo{person}{Guoliang
+  Li}, {and} \bibinfo{person}{Zhifeng Bao}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{Dita: Distributed in-memory trajectory analytics}.
+  In \bibinfo{booktitle}{\emph{Proceedings of the 2018 International Conference
+  on Management of Data}}. ACM, \bibinfo{pages}{725--740}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Xie, Li, and Phillips}{Xie
+  et~al\mbox{.}}{2017}]%
+        {xie2017distributed}
+\bibfield{author}{\bibinfo{person}{Dong Xie}, \bibinfo{person}{Feifei Li},
+  {and} \bibinfo{person}{Jeff~M Phillips}.} \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{Distributed trajectory similarity search}.
+\newblock \bibinfo{journal}{\emph{Proceedings of the VLDB Endowment}}
+  \bibinfo{volume}{10}, \bibinfo{number}{11} (\bibinfo{year}{2017}),
+  \bibinfo{pages}{1478--1489}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Zhang, Jin, Mao, Yang, and Zhou}{Zhang
+  et~al\mbox{.}}{2017}]%
+        {zhang2017trajspark}
+\bibfield{author}{\bibinfo{person}{Zhigang Zhang}, \bibinfo{person}{Cheqing
+  Jin}, \bibinfo{person}{Jiali Mao}, \bibinfo{person}{Xiaolin Yang}, {and}
+  \bibinfo{person}{Aoying Zhou}.} \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{Trajspark: A scalable and efficient in-memory
+  management system for big trajectory data}. In
+  \bibinfo{booktitle}{\emph{Asia-Pacific Web (APWeb) and Web-Age Information
+  Management (WAIM) Joint Conference on Web and Big Data}}. Springer,
+  \bibinfo{pages}{11--26}.
+\newblock
+
+
+\end{thebibliography}
