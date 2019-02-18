@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{1}
+\begin{thebibliography}{2}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -47,6 +47,21 @@
   trajectories.}. In \bibinfo{booktitle}{\emph{VLDB}}.
   \bibinfo{pages}{395--406}.
 \newblock
+
+
+\bibitem[\protect\citeauthoryear{Roussopoulos, Kelley, and
+  Vincent}{Roussopoulos et~al\mbox{.}}{1995}]%
+        {nnq95}
+\bibfield{author}{\bibinfo{person}{Nick Roussopoulos}, \bibinfo{person}{Stephen
+  Kelley}, {and} \bibinfo{person}{Frédéic Vincent}.}
+  \bibinfo{year}{1995}\natexlab{}.
+\newblock \showarticletitle{Nearest Neighbor Queries}.
+\newblock \bibinfo{journal}{\emph{ACM SIGMOD Record}}  \bibinfo{volume}{24},
+  \bibinfo{pages}{71--79}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1145/223784.223794}
+\showDOI{\tempurl}
 
 
 \end{thebibliography}

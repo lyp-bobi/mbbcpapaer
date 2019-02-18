@@ -258,6 +258,7 @@ Using the fact that the absolute value of the slope of each edge of the parallel
     \State d:Double = maxspeed*t
     \State a:Double
     \State b:Double
+    \State //check the y-t surface projection
     \If{bc.A.x+bc.B.x>box.high.x+box.low.x}
         \State a=bc.A.x-box.high.x
         \State b=bc.B.x-box.high.x
@@ -266,8 +267,9 @@ Using the fact that the absolute value of the slope of each edge of the parallel
         \State b=box.low.x-bc.B.x
     \EndIf
     \If{a+b>d or a*t>d*t1 or b*t>d*(t-t0)}
-        \State \textbf{return} false
+        \State \textbf{return} false //pruning
     \EndIf
+    \State //check the x-t surface projection
     \If{bc.A.y+bc.B.y>box.high.y+box.low.y}
         \State a=bc.A.y-box.high.y
         \State b=bc.B.y-box.high.y
@@ -276,12 +278,34 @@ Using the fact that the absolute value of the slope of each edge of the parallel
         \State b=box.low.y-bc.B.y
     \EndIf
     \If{a+b>d or a*t>d*t1 or b*t>d*(t-t0)}
-        \State \textbf{return} false
+        \State \textbf{return} false //pruning
+    \EndIf
+    \State //check the x-y surface projection
+    \If{$d^2+(box.A.x-box.B.x)^2+(box.A.y-box.B.y)^2>(2*box.x-box.A.x-box.B.x)^2+(2*box.y-box.A.y-box.B.y)^2$}
+            \State \textbf{continue}
+    \EndIf
+    \If{(bc.A.x-bc.B.x)(bc.A.y-bc.B.y)>=0}
+        \If{not \Call{InEllipse}{bc,Point(box.low.x,box.high.y)} \textbf{and} not \Call{InEllipse}{bc,Point(box.high.x,box.low.y)}}
+            \State \textbf{return} false
+        \EndIf
+    \Else
+        \If{not \Call{InEllipse}{bc,Point(box.low.x,box.low.y)} \textbf{and} not \Call{InEllipse}{bc,Point(box.high.x,box.high.y)}}
+            \State \textbf{return} false
+        \EndIf
     \EndIf
     \State \textbf{return} true
 \EndFunction
+\Function{InEllipse}{bc:MBBC,point:Point}
+    \If{$(bc.A.x-point.x)^2+(bc.A.y-point.y)^2+(bc.B.x-point.x)^2+(bc.B.y-point.y)^2>d^2/4+(bc.A.x-bc.B.x)^2+(bc.A.y-bc.B.y)^2$}
+        \State \textbf{return} false
+    \EndIf
+\EndFunction
 \end{algorithmic}
 \end{algorithm}
+
+\subsection{Doing KNN Query}
+How to do KNN query in a R-tree like structure have been studied widely.\cite{nnq95} And the most popular method is to use the MINDIST(the theorical minimum distance given the information of the MBR) and MINMAXDIST(the guranteed value that the exact minimum distance must smaller or equal to).\par
+However, the calculation of MINMAXDIST on trajectories 
 
 
 \section{Implementation on Spark}
@@ -290,8 +314,6 @@ In Spark, there are naturally two levels of storage. The first level is RDD, whi
 Recent studies have proposed a widely used method called two-level index, which refers to a structure that use a global index to manage different partitions, and use a local index to handle the data inside a single partition.\par
 Instead of just adopting the two-level index structure, we extend it into a three-level index using the property of time axis. This method would help us to append new data into the data set and the update of index more easily, which cater to the real application better.\par
 At the top level, instead of represent the whole data as one RDD, we use a combination of RDDs to store data. Each RDD stands for a leaf node of the $B^+$-Tree or a hash value of Hash Map in the time axis of global index.
-
-
 
 
 \bibliographystyle{ACM-Reference-Format}

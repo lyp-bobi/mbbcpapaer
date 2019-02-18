@@ -3,4 +3,5 @@ The style file: ACM-Reference-Format.bst
 Database file #1: sample-base.bib
 Warning--empty publisher in pfoser2000novel
 Warning--empty address in pfoser2000novel
-(There were 2 warnings)
+Warning--empty booktitle in nnq95
+(There were 3 warnings)
