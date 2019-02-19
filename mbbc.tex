@@ -32,7 +32,7 @@
   \institution{Shanghai Jiaotong University}
 }
 \begin{abstract}
-In the widely used Minimun Bounding Box(MBB) system, if we want to express a moving object in a given time period, we have to form a 3-dimension rectangle that bound it, namely $[x_1,x_2] \times [y_1,y_2] \times [t_1,t_2]$. And when doing different kinds of query on the trajectories, we actually first use message of their MBBs to do some pruning to avoid the full scan of the database and the complex computation of the exact distance between trajectories. In this paper we propose a new method called Minimum Bounding Bicone (to make difference with Minimum Bounding Box, we abbreviate this as MBBC), which we would show to be a more precise description of the original trajectory points. And we designed a index structure named $R^2$-Tree, which could fully utilize the MBBCs to achieve better pruning power than R-Tree.\par
+In the widely used Minimun Bounding Box(MBB) system, if we want to express a moving object in a given time period, we have to form a 3-dimension rectangle that bound it, namely $[x_1, x_2] \times [y_1, y_2] \times [t_1, t_2]$. And when doing different kinds of query on the trajectories, we actually first use message of their MBBs to do some pruning to avoid the full scan of the database and the complex computation of the exact distance between trajectories. In this paper we propose a new method called Minimum Bounding Bicone (to make difference with Minimum Bounding Box, we abbreviate this as MBBC), which we would show to be a more precise description of the original trajectory points. And we designed a index structure named $R^2$-Tree, which could fully utilize the MBBCs to achieve better pruning power than R-Tree.\par
 The MBBC and $R^2$-Tree method is actually a general method that can apply to many different existing trajectory systems to replace the MBB and R-tree. It have no special relationship between any definition of queries or any distance function/ dissimilarity measurement, and can be tuned to support many kinds of existing trajectory queries.\par
 So in this paper we just implement MBBCs and $R^2$-Tree on the most common condition to illustrate its efficiency, leaving the combination of MBBCs with more specified and advanced to readers.
 \end{abstract}
@@ -60,37 +60,37 @@ First we define a function which is at the core of this paper.
 \begin{myDef}
   (Possible Area) Denote $\mathcal{C}$ as the full spatial space, which is invariant over time. Given a spatial area $\mathcal{A}$(which could degenerate into a point) and a time stamp $t_0$, we define the function $Possible\_Area()$ which calculate the Possible\_Area position at a given time $t$ if the object could at most move at a velocity $v$.
   $$
-  Possible\_Area(t;\mathcal{A},t_0,v) = \{A+v|t-t_0|*\vec{n} \big| ||\vec{n}|| \leq 1\}.
+  Possible\_Area(t;\mathcal{A}, t_0, v) = \{A+ v|t-t_0|* \vec{n} \big| ||\vec{n}|| \leq 1\}.
   $$
 \end{myDef}
 \begin{myDef}
-  (Possible Cone) We further define the function to calculate all the Possible\_Area points as Possible\_Cone(), which could be further divide extend to $Possible\_Cone^+$ and $Possible\_Cone^-$ as tow nappes of the double cone.
+  (Possible Cone) We further define the function to calculate all the Possible\_Area points as Possible\_Cone(), which could be further divide extend to $Possible\_Cone^+ $ and $Possible\_Cone^-$ as tow nappes of the double cone.
   $$
   \begin{aligned}
-  Possible\_&Cone(\mathcal{A},t_0,v)=\\
-  &\{Possible\_Area(t;\mathcal{A},t_0,v)\times t | t\in [-\infty,\infty]\}\\
-  Possible\_&Cone^+(\mathcal{A},t_0,v)=\\
-  &\{Possible\_Area(t;\mathcal{A},t_0,v)\times t \big | t\geq t_0\}\\
-  Possible\_&Cone^-(\mathcal{A},t_0,v)=\\
-  &\{Possible\_Area(t;\mathcal{A},t_0,v)\times t \big | t\leq t_0\}
+  Possible\_&Cone(\mathcal{A}, t_0, v)=\\
+  &\{Possible\_Area(t;\mathcal{A}, t_0, v)\times t | t\in [-\infty, \infty]\}\\
+  Possible\_&Cone^+ (\mathcal{A}, t_0, v)=\\
+  &\{Possible\_Area(t;\mathcal{A}, t_0, v)\times t \big | t\geq t_0\}\\
+  Possible\_&Cone^-(\mathcal{A}, t_0, v)=\\
+  &\{Possible\_Area(t;\mathcal{A}, t_0, v)\times t \big | t\leq t_0\}
   \end{aligned}
   $$
 \end{myDef}
 \begin{myDef}
-(MBBC)Given a trajectory $$T=[(x_1,y_1,t_1), (x_2,y_2,t_2), ..., (x_n,y_n,t_n)],$$with the maximum speed v, the Minimum Bounding Bicone of it is
+(MBBC)Given a trajectory $$T=[(x_1, y_1, t_1), (x_2, y_2, t_2), ..., (x_n, y_n, t_n)], $$with the maximum speed v, the Minimum Bounding Bicone of it is
 $$
 \begin{aligned}
-MBBC(T;v)=Possible\_Cone^+((x_1,y_1),t_1,v)\\
-\bigcap Possible\_Cone^-((x_n,y_n),t_n,v),
+MBBC(T;v)=Possible\_Cone^+ ((x_1, y_1), t_1, v)\\
+\bigcap Possible\_Cone^-((x_n, y_n), t_n, v),
 \end{aligned}
 $$
 which is a bicone. As we can see, the intervening points contributes nothing to the MBBC after the maximum speed is given, so we call this type of MBBC a MBBC of points.
 \par
-Similarly we define MBBC of two area laid at starting and ending time, expressed as $(\mathcal{A},t_1),(\mathcal{B},t_n)$ to be
+Similarly we define MBBC of two area laid at starting and ending time, expressed as $(\mathcal{A}, t_1), (\mathcal{B}, t_n)$ to be
 $$
 \begin{aligned}
-MBBC(\mathcal{A},\mathcal{B};t_1,t_n,v)=Possible\_Cone^+(\mathcal{A},t_1,v)\\
-\bigcap Possible\_Cone^-(\mathcal{B},t_n,v),
+MBBC(\mathcal{A}, \mathcal{B};t_1, t_n, v)=Possible\_Cone^+ (\mathcal{A}, t_1, v)\\
+\bigcap Possible\_Cone^-(\mathcal{B}, t_n, v),
 \end{aligned}
 $$
 which shape would be like two truncated cones, so for convenience we still call it MBBC. \par
@@ -117,17 +117,17 @@ Due to the strategy of building the index tree, the $\mathcal{A} and \mathcal{B}
 
 \Ensure MBB
     \State dimension:Int
-    \State low:Point //this Point stores the lower value of x,y and t for this MBB
-    \State high:Point //this Point stores the higher value of x,y and t for this MBB
-    \Function{expand}{v:Double,t:Double}
+    \State low:Point //this Point stores the lower value of x, y and t for this MBB
+    \State high:Point //this Point stores the higher value of x, y and t for this MBB
+    \Function{expand}{v:Double, t:Double}
         \State newmbb:MBB=\textbf{this}
-        \State newmbb.low.t +=t
-        \State newmbb.high.t +=t
+        \State newmbb.low.t + =t
+        \State newmbb.high.t + =t
         \State t=\Call{abs}{t}
-        \State newmbb.low.x -= v*t
-        \State newmbb.low.y -= v*t
-        \State newmbb.high.x += v*t
-        \State newmbb.high.y += v*t
+        \State newmbb.low.x -= v* t
+        \State newmbb.low.y -= v* t
+        \State newmbb.high.x + = v* t
+        \State newmbb.high.y + = v* t
         \State \textbf{return} newmbb
     \EndFunction
 
@@ -157,7 +157,7 @@ The shape of a point MBBC of a trajectory would like Figure \ref{fig:matlab}. No
 \begin{figure}[ht]
   \centering
   \includegraphics[width=\linewidth]{matlab.jpg}
-  \caption{A MBBC of points,Plotted by MATLAB, with speed 1, start point (0,0,0), and end point (4,0,5)}
+  \caption{A MBBC of points, Plotted by MATLAB, with speed 1, start point (0, 0, 0), and end point (4, 0, 5)}
   \Description{matlab bicone}
   \label{fig:matlab}
 \end{figure}
@@ -178,22 +178,22 @@ In fact, most of existing trajectory systems use some kind of R-tree structure. 
 MBBC is a tight expression to the raw trajectories, but the use of the maximum velocity leads to some problems when we want to combine multiple MBBCs to construct a RTree-like structure, as the slope of different MBBCs are different. Our solution is to build the tree structure using the maximum speed we already know, and after the tree construction, we recalculate the real bound of tree node from a bottom-up structure.\par
 \subsection{Temporal Index}
 As we stated earlier, dividing a long trajectories into multiple segments is necessary when indexing and querying trajectories. So the first level of index should divide the data into small time periods.\par
-We choose to build a $B^+$-Tree or a Hash table on the time axis, and for each time period(which is a leaf of the $B^+$-Tree or a value of the Hash table), we would build a RTree-like index structure called $R^2$-Tree. The square means that it use the range informations both at the start time and at the end time. We are doing this for four reasons.\\
+We choose to build a $B^+ $-Tree or a Hash table on the time axis, and for each time period(which is a leaf of the $B^+ $-Tree or a value of the Hash table), we would build a RTree-like index structure called $R^2$-Tree. The square means that it use the range informations both at the start time and at the end time. We are doing this for four reasons.\\
 \indent The first reason is the inefficiency of RTree and its variants on 3 or higher dimensions. This basically comes from the fact that the ratio of volume of the bounding boxes in comparison with the real volume grows exponentially with the increase of dimension.\\
 \indent The second reason is that the query on the trajectories generally only involves trajectories in a given time period instead of using time information as a measurement of the relation between trajectories.\\
-\indent The third reason is that things can move forth and back in spatial axes, but can only move forth in time axes. Using $B+$-Tree or Hash table could utilize this knowledge better.\\
+\indent The third reason is that things can move forth and back in spatial axes, but can only move forth in time axes. Using $B+ $-Tree or Hash table could utilize this knowledge better.\\
 \indent And the last reason is that scholars have agreed on the necessity of cutting long trajectories into small segments to avoid their MBBs to grow too large. We would also use this method to avoid producing large MBBCs, and this method basically corresponds to the division of time axis.\par
 
-We suggest two ways to build the first level of index upon time axis. The first one is to divide the time into segments of a given length, for example, one hour. Then we can access the $R^2$-Tree of the given time period by Hash Table. But this method may lead to data imbalance, for example, the car trajectories during the day is more than the trajectories during the night. The imbalance of data would not only lead to the imbalance of the whole tree, but also the imbalance of pruning power, that is, if there are a lot of trajectories in a given time period, we would want the time period to be smaller or the MBBCs would be overlapped with others frequently and make it hard to pruning using spatial information. So we suggest a second way, which is to build a $B^+$-Tree where each leaf node shares almost the same number of trajectory points. For general data, this method would result in longer querying time, but for skewed data, this method may produce better result.\par
+We suggest two ways to build the first level of index upon time axis. The first one is to divide the time into segments of a given length, for example, one hour. Then we can access the $R^2$-Tree of the given time period by Hash Table. But this method may lead to data imbalance, for example, the car trajectories during the day is more than the trajectories during the night. The imbalance of data would not only lead to the imbalance of the whole tree, but also the imbalance of pruning power, that is, if there are a lot of trajectories in a given time period, we would want the time period to be smaller or the MBBCs would be overlapped with others frequently and make it hard to pruning using spatial information. So we suggest a second way, which is to build a $B^+ $-Tree where each leaf node shares almost the same number of trajectory points. For general data, this method would result in longer querying time, but for skewed data, this method may produce better result.\par
 
 After time division, each trajectory would be divided into one or more segments. But the problem is some trajectories may not start at the starting time of the time period, and some trajectories may end before the ending time of the period, which made the data hard to use. So for convenience, for a trajectory segment that do not occupy the full time period, we record it's start point and end point, make a line through the points, and records the intersect points of this line with the starting and ending time. And we use these two new points to make a MBBC. It's obvious that the new MBBC fully contains the old one.
 
 \subsection{Spatial Index}
-In each time period, if the time period is $[t_1,t_n]$, we would build the so called $R^2$-Tree, which by structure is a binary tree, in a simple divide and conquer manner. At start, we have a root node which record all the trajectories in $$MBBC(\mathcal{C},\mathcal{C};t_1,t_n,v).$$ Then we would either do a "start division" or a "end division", the process would be similar to the construction of k-d Tree.\par
+In each time period, if the time period is $[t_1, t_n]$, we would build the so called $R^2$-Tree, which by structure is a binary tree, in a simple divide and conquer manner. At start, we have a root node which record all the trajectories in $$MBBC(\mathcal{C}, \mathcal{C};t_1, t_n, v).$$ Then we would either do a "start division" or a "end division", the process would be similar to the construction of k-d Tree.\par
 
-For start division, we pick an area $\mathcal{A}$ and calculate the $$\mathcal{B}=MBB(Possible\_Area(t;\mathcal{A},t_1,v)).$$
-Then we calculate $$\mathcal{B'}=MBB(Possible\_Area(t;\mathcal{C} \setminus \mathcal{A},t_1,v)),$$
-which is the area that an object can reach if it start in $\mathcal{C}\setminus \mathcal{A}$. So the left node of the root is the trajectories in $$MBBC(\mathcal{A},\mathcal{B};t_1,t_n,v),$$ and right node is the trajectories in $$MBBC(\mathcal{C}\setminus \mathcal{A},\mathcal{B'};t_1,t_n,v).$$ The end division is just the same except we first pick an area containing ending points, and calculate back the Possible\_Area starting position.\par
+For start division, we pick an area $\mathcal{A}$ and calculate the $$\mathcal{B}=MBB(Possible\_Area(t;\mathcal{A}, t_1, v)).$$
+Then we calculate $$\mathcal{B'}=MBB(Possible\_Area(t;\mathcal{C} \setminus \mathcal{A}, t_1, v)), $$
+which is the area that an object can reach if it start in $\mathcal{C}\setminus \mathcal{A}$. So the left node of the root is the trajectories in $$MBBC(\mathcal{A}, \mathcal{B};t_1, t_n, v), $$ and right node is the trajectories in $$MBBC(\mathcal{C}\setminus \mathcal{A}, \mathcal{B'};t_1, t_n, v).$$ The end division is just the same except we first pick an area containing ending points, and calculate back the Possible\_Area starting position.\par
 
 The area selection is just like the k-d Tree, where we first select an axis, and for the axis, we select the median point and divide the plain into two parts which would divide the data into two sets containing equal number of trajectories. For there are two spatial dimensions, we have four division strategies, namely start/end division along x/y axis.\par
 
@@ -230,19 +230,19 @@ The intersection check of a point and a MBBC or two MBBCs in same time period is
 \begin{algorithm}
 \caption{MBBCIntersect} \label{alg:MBBCintersects}
 \begin{algorithmic}[ht]
-\Function{Intersect}{p:Point,bc:MBBC}
-    p1:Point = the nearest verticle of bc.A to p
-    p2:Point = the nearest verticle of bc.B to p
-    \If{\Call{SpatialDistSqaure}{p,p1}> $bc.maxspeed^2$*\Call{TemporalDistSqaure}{p,p1} \textbf{or} \Call{SpatialDistSqaure}{p,p2}> $bc.maxspeed^2$*\Call{TemporalDistSqaure}{p,p2}}
+\Function{Intersect}{p:Point, bc:MBBC}
+    \State p1:Point = the nearest verticle of bc.A to p
+    \State p2:Point = the nearest verticle of bc.B to p
+    \If{\Call{SpatialDistSqaure}{p, p1}> $bc.maxspeed^2$* \Call{TemporalDistSqaure}{p, p1} \textbf{or} \Call{SpatialDistSqaure}{p, p2}> $bc.maxspeed^2$* \Call{TemporalDistSqaure}{p, p2}}
         \State \textbf{return} false //use square distance to avoid using sqrt()
     \EndIf
     \State \textbf{return} true
 \EndFunction
-\Function{Intersect}{bc1:MBBC,bc2:MBBC}
+\Function{Intersect}{bc1:MBBC, bc2:MBBC}
     %\If{\Call{Intersect}{bc1.A, bc2.A} or \Call{intersect}{bc1.B, bc2.B}}
 %        \State \textbf{return} true
 %    \EndIf
-    \If{not \Call{Intersect}{bc1.possibleB(),bc2.B} \textbf{or} not \Call{Intersect}{bc1.possibleA(),bc2.A} }
+    \If{not \Call{Intersect}{bc1.possibleB(), bc2.B} \textbf{or} not \Call{Intersect}{bc1.possibleA(), bc2.A} }
         \State \textbf{return} false
     \EndIf
     \State \textbf{return} true
@@ -251,9 +251,9 @@ The intersection check of a point and a MBBC or two MBBCs in same time period is
 \end{algorithm}
 
 To answer the question 3, to any MBB or MBBC that serves as a query box, we first have to prune out most of really irrelevant data using most simple calculation, so we first calculate
-$$\mathcal{P_A} = MBB(Possible\_Area(t_0;[x1,x2] \times [y1,y2], t_2, maxspeed)$$
+$$\mathcal{P_A} = MBB(Possible\_Area(t_0;[x1, x2] \times [y1, y2], t_2, maxspeed)$$
 and
-$$\mathcal{P_B} = MBB(Possible\_Area(t_n;[x_1,x_2] \times [y_1,y_2], t_1, maxspeed).$$
+$$\mathcal{P_B} = MBB(Possible\_Area(t_n;[x_1, x_2] \times [y_1, y_2], t_1, maxspeed).$$
 Where the max speed is the theoretical one shared by this time period instead of the exact one. Using this, all the MBBCs that the starting area don't intersect with $\mathcal{P_A}$ or ending area don't intersects with $\mathcal{P_B}$ would be pruned easily. If we have the exact MBB message, we can instead use the message of MBBs to do this round of pruning by checking whether the MBB intersects with the query box. \par
 After the first level of pruning, we can use some more costy algorithm for the most of data is already pruned out. So we would start to check whether the MBBC actually intersects with the MBB.\par
 A good property of bicone is that when looking from any direction which is perpendicular to t-axis, the shape of the bicone is a parallelogram with the same slope (which is the value of maximum speed v). We could easily proof that if a MBBC intersects with a MBB, then their projections on x-t plane, y-t plane and x-y plane also intersect. We would use this property for the second stage of pruning, named Projection Pruning. \par
@@ -267,41 +267,41 @@ Using the fact that the absolute value of the slope of each edge of the parallel
     \State t0:Double = box.low.t-bc.A.t
     \State t1:Double = box.high.t-bc.A.t
     \State t:Double = bc.B.t-bc.A.t
-    \State d:Double = maxspeed*t
+    \State d:Double = maxspeed* t
     \State a:Double
     \State b:Double
     \State //check the y-t surface projection
-    \If{bc.A.x+bc.B.x>box.high.x+box.low.x}
+    \If{bc.A.x+ bc.B.x>box.high.x+ box.low.x}
         \State a=bc.A.x-box.high.x
         \State b=bc.B.x-box.high.x
     \Else
         \State a=box.low.x-bc.A.x
         \State b=box.low.x-bc.B.x
     \EndIf
-    \If{a+b>d or a*t>d*t1 or b*t>d*(t-t0)}
+    \If{a+ b>d or a* t>d* t1 or b* t>d* (t-t0)}
         \State \textbf{return} false //pruning
     \EndIf
     \State //check the x-t surface projection
-    \If{bc.A.y+bc.B.y>box.high.y+box.low.y}
+    \If{bc.A.y+ bc.B.y>box.high.y+ box.low.y}
         \State a=bc.A.y-box.high.y
         \State b=bc.B.y-box.high.y
     \Else
         \State a=box.low.y-bc.A.y
         \State b=box.low.y-bc.B.y
     \EndIf
-    \If{a+b>d or a*t>d*t1 or b*t>d*(t-t0)}
+    \If{a+ b>d or a* t>d* t1 or b* t>d* (t-t0)}
         \State \textbf{return} false //pruning
     \EndIf
     \State //check the x-y surface projection
-    \If{$d^2+(box.A.x-box.B.x)^2+(box.A.y-box.B.y)^2>(2*box.x-box.A.x-box.B.x)^2+(2*box.y-box.A.y-box.B.y)^2$}
+    \If{$d^2+ (box.A.x-box.B.x)^2+ (box.A.y-box.B.y)^2>(2* box.x-box.A.x-box.B.x)^2+ (2* box.y-box.A.y-box.B.y)^2$}
             \State \textbf{continue}
     \EndIf
     \If{(bc.A.x-bc.B.x)(bc.A.y-bc.B.y)>=0}
-        \If{not \Call{InEllipse}{bc,Point(box.low.x,box.high.y)} \textbf{and} not \Call{InEllipse}{bc,Point(box.high.x,box.low.y)}}
+        \If{not \Call{InEllipse}{bc, Point(box.low.x, box.high.y)} \textbf{and} not \Call{InEllipse}{bc, Point(box.high.x, box.low.y)}}
             \State \textbf{return} false
         \EndIf
     \Else
-        \If{not \Call{InEllipse}{bc,Point(box.low.x,box.low.y)} \textbf{and} not \Call{InEllipse}{bc,Point(box.high.x,box.high.y)}}
+        \If{not \Call{InEllipse}{bc, Point(box.low.x, box.low.y)} \textbf{and} not \Call{InEllipse}{bc, Point(box.high.x, box.high.y)}}
             \State \textbf{return} false
         \EndIf
     \EndIf
@@ -313,8 +313,8 @@ Using the fact that the absolute value of the slope of each edge of the parallel
 \begin{algorithm}
 \caption{ProjectionPruning} \label{alg:proprune}
 \begin{algorithmic}[ht]
-\Function{InEllipse}{bc:pointMBBC,point:Point}
-    \If{$(bc.A.x-point.x)^2+(bc.A.y-point.y)^2+(bc.B.x-point.x)^2+(bc.B.y-point.y)^2>d^2/4+(bc.A.x-bc.B.x)^2+(bc.A.y-bc.B.y)^2$}
+\Function{InEllipse}{bc:pointMBBC, point:Point}
+    \If{$(bc.A.x-point.x)^2+ (bc.A.y-point.y)^2+ (bc.B.x-point.x)^2+ (bc.B.y-point.y)^2>d^2/4+ (bc.A.x-bc.B.x)^2+ (bc.A.y-bc.B.y)^2$}
         \State \textbf{return} false
     \EndIf
 \EndFunction
@@ -330,40 +330,40 @@ However, for the trajectory similarity pruning, the MINMAXDIST from a trajectory
 By using the MBBC method, we could yield tighter bounds to both MINDIST and MAXDIST, with tolerable computation cost. \par
 
 The strategy we use is rather simple to reduce the computation. we first calculate the distance of two MBBCs at the starting and ending points, and combine them with max speed to yield a most pessimistic and optimistic distance as MINDIST and MAXDIST. The pseudo code is in Algorithm \ref{alg:minmax}.\par
-To answer question 3, when we are given a distance d and a trajectory traj, we don't have to run the code of calculating MINDIST and MAXDIST on every node in the tree. Instead, we can only concern the nodes that distance of the starting time plus distance of the ending time is lesser or equal to $3* maxspeed* t + 2*d/t$, which could be search quickly through the $R^2$-Tree
+To answer question 3, when we are given a distance d and a trajectory traj, we don't have to run the code of calculating MINDIST and MAXDIST on every node in the tree. Instead, we can only concern the nodes that distance of the starting time plus distance of the ending time is lesser or equal to $3* maxspeed* t + 2* d/t$, which could be search quickly through the $R^2$-Tree
 \begin{algorithm}
 \caption{MINDIST and MAXDIST} \label{alg:minmax}
 \begin{algorithmic}[ht]
 \Function{MINANDMAX}{bc1:MBBC, bc2:MBBC}
-    \State maxspeed:Double = max(bc1.maxspeed,bc2.maxspeed)
+    \State maxspeed:Double = max(bc1.maxspeed, bc2.maxspeed)
     \State min:Double
     \State max:Double
-    \State d1:Double = \Call{SPATIALDISTSQUARE}{bc1.A,bc2.A}
-    \State d2:Double = \Call{SPATIALDISTSQUARE}{bc1.B,bc2.B}
-    \State m1:Double = \Call{SPATIALDISTSQUARE}{bc1.A,bc1.B}
-    \State m2:Double = \Call{SPATIALDISTSQUARE}{bc2.A,bc2.B}
-    \If{$d1<(2*maxspeed*t)^2$ \textbf{and} $d2<(2*maxspeed*t)^2$} //then they could meet
-        \State min = (d1*d1+d2*d2)/maxspeed/4
+    \State d1:Double = \Call{SPATIALDISTSQUARE}{bc1.A, bc2.A}
+    \State d2:Double = \Call{SPATIALDISTSQUARE}{bc1.B, bc2.B}
+    \State m1:Double = \Call{SPATIALDISTSQUARE}{bc1.A, bc1.B}
+    \State m2:Double = \Call{SPATIALDISTSQUARE}{bc2.A, bc2.B}
+    \If{$d1<(2* maxspeed* t)^2$ \textbf{and} $d2<(2* maxspeed* t)^2$} //then they could meet
+        \State min = (d1* d1+ d2* d2)/maxspeed/4
     \Else
         \State t = bc1.B.t-bc1.A.t
-        \State min = (sqrt(d1)+sqrt(d2))*t-maxspeed*t*t/2-2*(d1+d2)/maxspeed
+        \State min = (sqrt(d1)+ sqrt(d2))* t-maxspeed* t* t/2-2* (d1+ d2)/maxspeed
     \EndIf
-    \State max = (sqrt(d1)+sqrt(d2))*t + maxspeed*t*t/2+ 2*(d1+d2)/maxspeed
-    \State \textbf{return} (min,max)
+    \State max = (sqrt(d1)+ sqrt(d2))* t + maxspeed* t* t/2+ 2* (d1+ d2)/maxspeed
+    \State \textbf{return} (min, max)
 \EndFunction
 \Function{MINANDMAX}{traj:List[Point], bc:pointMBBC}
     \State maxspeed:Double = bc.maxspeed
     \State ts:Double = traj[0].t
     \State te:Double = traj[-1].t //-1 means the last one
-    \State d1 = $sqrt((traj[0].x+bc.A.x)^2+(traj[0].y+bc.A.y)^2)$
-    \State d2 = $sqrt((traj[-1].x+bc.B.x)^2+(traj[-1].y+bc.B.y)^2)$
+    \State d1 = $sqrt((traj[0].x+ bc.A.x)^2+ (traj[0].y+ bc.A.y)^2)$
+    \State d2 = $sqrt((traj[-1].x+ bc.B.x)^2+ (traj[-1].y+ bc.B.y)^2)$
     \State summin:Double = d1* (traj[1].t- traj[0].t) + d2* (traj[-1].t-traj[-2].t)
     \State summax:Double = d1* (traj[1].t- traj[0].t) + d2* (traj[-1].t-traj[-2].t)
-    \For{i = 1,2,3,...len(traj)-2}
-        \State summin += min(d1+(traj[i].t-ts)*maxspeed, d2+ (te-traj[i].t)*maxspeed,0)* (traj[i+1].t-traj[i-1].t)
-        \State summax += min(d1+(traj[i].t+ts)*maxspeed, d2+ (te+traj[i].t)*maxspeed)* (traj[i+1].t-traj[i-1].t)
+    \For{i = 1, 2, 3, ...len(traj)-2}
+        \State summin + = min(d1+ (traj[i].t-ts)* maxspeed, d2+ (te-traj[i].t)* maxspeed, 0)* (traj[i+ 1].t-traj[i-1].t)
+        \State summax + = min(d1+ (traj[i].t+ ts)* maxspeed, d2+ (te+ traj[i].t)* maxspeed)* (traj[i+ 1].t-traj[i-1].t)
     \EndFor
-    \State \textbf{return} (summin/2,summax/2)
+    \State \textbf{return} (summin/2, summax/2)
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
@@ -378,45 +378,45 @@ Compared with MBB, MBBC takes advantage of the information of direction(in other
 The boost to pruning would be obvious. Because every trajectory is bounded in a smaller box than its MBB(not exactly with MBBC, but we can use the intersection of MBB and MBBC for pruning, which must be smaller than MBB). That lead to a tighter bound to almost everything of the trajectories. And those information is particularly useful in the bottom of the index tree, as the starting and ending areas tend to be smaller. For MBBC with large starting and ending areas, its volume would be similar to MBB, while for the ones with small starting and ending areas, it at most have 1/3 volume of MBBs.\par
 Two kinds of questioning is always proposed to MBBC method. The first is that pruning on $R^2$-tree need more computation, and the second is that the intersection of multiple MBBC is too large and cannot yield good pruning result.\par
 For the first questioning, in fact the pruning on the $R^2$-tree is just like the pruning on the R-tree, as we can transform a R-tree area directly to the corresponding projection area on the starting and ending plane on the $R^2$-tree with tolerable false positive. Moreover, we have shown in previous section that the second level of pruning won't ask too much calculation.\par
-For the second questioning, in fact our MBBCs never intersects with each other on the $\mathbf{R}^2 \times \mathbf{R}^2 \times \mathbf{T}$ space instead of the $\mathbf{R}^2 \times \mathbf{T}$ space. And treat trajectory, which have time information, in this space is actually a more natural view than the old one.\par
-This usage of information do have some side effects. The first one is that MBBC handle an object rotating in a small circle, especially when they rotating in a very high speed, badly. But experiences have told us that trajectories of objects often looks like a combination of line segments. And if there is a lot of this kind of special data, building an index separately would be a good solution. 
+For the second questioning, in fact our MBBCs never intersects with each other on the $\mathbf{R}^2 \times \mathbf{R}^2 \times \mathbf{T}$ space instead of the $\mathbf{R}^2 \times \mathbf{T}$ space. And treating trajectory, which have time information, in this space is actually a more natural view than the old one.\par
+This usage of information do have some side effects. The first one is that MBBC handle an object rotating in a small circle, especially when they rotating in a very high speed, badly. But experiences have told us that trajectories of objects often looks like a combination of line segments. And if there is a lot of this kind of special data, building an index separately would be a good solution.
 
 \section{Implementation}
 \subsection{Queries Supported}
 In this section, we just defined the most natural and most common queries to avoid misunderstanding. We hope the usage on these most basic queries would reveal MBBC's power to you.\par
 We would like to support two basic kind of trajectory queries, namely range query and kNN query. Both of the query have multiple variants and different variants may require computing costs with polynomial level difference, so we would first give our definition of the query. \par
 \begin{myDef}
-  (ST-point) A Spatio-temporal point(abbreviate as ST-point) is a 3-tuple (x,y,t). The x and y stand for the location of the point, and the t stand for the time that the location is recorded.
+  (ST-point) A Spatio-temporal point(abbreviate as ST-point) is a 3-tuple (x, y, t). The x and y stand for the location of the point, and the t stand for the time that the location is recorded.
 \end{myDef}
 \begin{myDef}
   (Trajectory) A trajectory is a list of ST-points sorted by their time value in ascendant order, namely
 
-     $$[(x_1,y_1,t_1),(x_2,y_2,t_2),...,(x_n,y_n,t_n)], $$
+     $$[(x_1, y_1, t_1), (x_2, y_2, t_2), ..., (x_n, y_n, t_n)], $$
      $$t_1 \leqq t_2 \leqq t_3 \leqq ... \leqq t_n .$$
 
    The trajectory is the sampled points of the real trajectory, which is in the form of the function
-   $$T^{real}: t \Rightarrow (x,y), t\in [t_1,t_n].$$
+   $$T^{real}: t \Rightarrow (x, y), t\in [t_1, t_n].$$
    Notice that we assume we know exactly the starting and ending time of the real trajectory, namely $t_1$ and $t_n$.\\
    For the points are generally sampled in a given rate in the real world, we could assume that the differences $t_2-t_1, t_3-t_2, ... , t_n- t_(n-1)$ are nearly equal, although we don't require this property in the rest of the paper.
 \end{myDef}
 \begin{myDef}
-  (Integral Distance) Given two trajectories $$T_a=[(x_{a1},y_{a1},t_{a1}), (x_{a2},y_{a2},t_{a2}), ..., (x_{am},y_{am},t_{am})]$$ and $$T_b=(x_{b1},x_{b1},t_{b1}), (x_{b2}, y_{b2}, t_{b2}), ..., (x_{bn}, y_{bn}, t_{bn}),$$ we define their Integral Distance as below:\\
+  (Integral Distance) Given two trajectories $$T_a=[(x_{a1}, y_{a1}, t_{a1}), (x_{a2}, y_{a2}, t_{a2}), ..., (x_{am}, y_{am}, t_{am})]$$ and $$T_b=(x_{b1}, x_{b1}, t_{b1}), (x_{b2}, y_{b2}, t_{b2}), ..., (x_{bn}, y_{bn}, t_{bn}), $$ we define their Integral Distance as below:\\
   Denote $\hat{t}=\hat{t_a}\bigcup\hat{t_b}=\{t_{a1}, t_{a2}, ..., t_{am}\}\bigcup \{t_{b1}, t_{b2}, ..., t_{bn}\}$, and $\check{t}=[t_1, t_2, ..., t_l]$ as the $\hat{t}$ sorted by its ascendant order. And for $t \in \hat{t}$ define
   $$T_a'(t)=\left\{
              \begin{array}{lr}
              T_a(t), t \in \hat{t_a} \\
-             T_a(t_{ak})+ (T_a(t_{a(k+1)})-T_a(t_{ak}))* \frac{t-t_{ak}}{t_{a(k+1)}-t_{ak}}, \\
-             \indent  t \in [t_{a1}, t_{am}], t_{ak}<t<t_{a(k+1)} \\
-             T_a(t_{a1}), t \in [t_{b1},t_{bn}] \setminus [t_{a1},t_{am}], t< t_{a1} \\
-             T_a(t_{am}), t \in [t_{b1},t_{bn}] \setminus [t_{a1},t_{am}], t< t_{am}
+             T_a(t_{ak})+ (T_a(t_{a(k+ 1)})-T_a(t_{ak}))* \frac{t-t_{ak}}{t_{a(k+ 1)}-t_{ak}}, \\
+             \indent  t \in [t_{a1}, t_{am}], t_{ak}<t<t_{a(k+ 1)} \\
+             T_a(t_{a1}), t \in [t_{b1}, t_{bn}] \setminus [t_{a1}, t_{am}], t< t_{a1} \\
+             T_a(t_{am}), t \in [t_{b1}, t_{bn}] \setminus [t_{a1}, t_{am}], t< t_{am}
              \end{array}
     \right.$$
   and $T_b'(t)$ similarly. Then the Integral Distance is
   $$
   \begin{aligned}
-  d(&T_a,T_b)=\\
-  &\sum_{i \in \{1, 2, ..., l-1\}} \frac{1}{2} (T_a'(t_i)-T_b'(t_i)+T_a'(t_{i+1})-T_b'(t_{i+1}))\\
-  &\indent\indent\indent\indent\indent\indent\indent\indent\indent\indent*(t_{i+1}-t_i).
+  d(&T_a, T_b)=\\
+  &\sum_{i \in \{1, 2, ..., l-1\}} \frac{1}{2} (T_a'(t_i)-T_b'(t_i)+ T_a'(t_{i+ 1})-T_b'(t_{i+ 1}))\\
+  &\indent\indent\indent\indent\indent\indent\indent\indent\indent\indent* (t_{i+ 1}-t_i).
   \end{aligned}.
   $$
   This is a natural extension of the real Integral Distance
@@ -424,7 +424,7 @@ We would like to support two basic kind of trajectory queries, namely range quer
 \end{myDef}\par
 It's obvious that the Integral Distance is a natural extension of Euclidean Distance, and is the most natural distance between two trajectories with time information. We could also proof it is a metric, while most other trajectory similarity measures are not metric, like DTW, LCSS and EDR.
 \begin{myDef}
-  (Range Query)Given a query box $$[x_1,x_2] \times [y_1,y_2] \times [t_1,t_2],$$return all the trajectories that "intersect", which means having at least one point inside, this box.
+  (Range Query)Given a query box $$[x_1, x_2] \times [y_1, y_2] \times [t_1, t_2], $$return all the trajectories that "intersect", which means having at least one point inside, this box.
 \end{myDef}
 \begin{myDef}
   (kNN Query)Given a trajectory which not necessarily contained in the database, and find the trajectories which have the k smallest Integral distance to the given trajectory in the database, which may contain itself.
@@ -445,13 +445,13 @@ This part is incomplete.
 
 \section{Further work}
 TODO:\\
-1. Use MBB information to add some "if" statement in every algorithm.\\
-2. Suppurt some point distance(like closest point to a given trajectory) calculation in distance estimation.
+\indent 1. Use MBB information to add some "if" statement in every algorithm.\\
+\indent 2. Suppurt some point distance(like closest point to a given trajectory) calculation in distance estimation.\par
 OPTIONAL:\\
-1. Support DTW distance\\
-2. Support Spatial Join\\
-3. Support Distance Query\\
-4. Combine MBBC with Z-curve like structure instead of R-tree\par
+\indent 1. Support DTW distance\\
+\indent 2. Support Spatial Join\\
+\indent 3. Support Trajectory Distance Query\\
+\indent 4. Combine MBBC with Z-curve like structure instead of R-tree\par
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{sample-base}

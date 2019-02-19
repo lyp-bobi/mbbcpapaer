@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6930 64-bit) (preloaded format=pdflatex 2019.1.22)  19 FEB 2019 14:38
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6930 64-bit) (preloaded format=pdflatex 2019.1.22)  19 FEB 2019 15:10
 entering extended mode
 **./mbbc.tex
 (mbbc.tex
@@ -1234,24 +1234,6 @@ LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
 (Font)              scaled to size 5.5pt on input line 194.
  [4.4]
-Underfull \hbox (badness 10000) in paragraph at lines 236--237
-[] \T1/LinuxLibertineT-TLF/b/n/10 if \T1/LinuxLibertineT-TLF/m/sc/10 (+20) Spa-
-tialD-ist-Sqaure\T1/LinuxLibertineT-TLF/m/n/10 (+20) (p,p1)>
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 236--237
-\OML/nxlmi/m/it/10 bc:maxspeed[]$\T1/LinuxLibertineT-TLF/m/n/10 (+20) *\T1/Linu
-xLibertineT-TLF/m/sc/10 (+20) TemporalDistSqaure\T1/LinuxLibertineT-TLF/m/n/10 
-(+20) (p,p1)
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 236--237
-\T1/LinuxLibertineT-TLF/b/n/10 or \T1/LinuxLibertineT-TLF/m/sc/10 (+20) Spa-tia
-lD-ist-Sqaure\T1/LinuxLibertineT-TLF/m/n/10 (+20) (p,p2)>
- []
-
 
 Class acmart Warning: \vspace should only be used to provide space above/below 
 surrounding objects on input line 251.
@@ -1287,10 +1269,10 @@ Underfull \hbox (badness 10000) in paragraph at lines 265--266
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 304--305
+Underfull \hbox (badness 1242) in paragraph at lines 300--301
 \T1/LinuxLibertineT-TLF/b/n/10 and \T1/LinuxLibertineT-TLF/m/n/10 (+20) not \T1
 /LinuxLibertineT-TLF/m/sc/10 (+20) In-El-lipse\T1/LinuxLibertineT-TLF/m/n/10 (+
-20) (bc,Point(box.high.x,box.high.y))
+20) (bc, Point(box.high.x, box.low.y))
  []
 
 
@@ -1321,21 +1303,12 @@ Overfull \hbox (6.84143pt too wide) in paragraph at lines 327--327
 is MINDIST, MAXDIST
  []
 
-[5.5]
+
+Underfull \vbox (badness 1881) has occurred while \output is active []
+
+ [5.5]
 Underfull \hbox (badness 10000) in paragraph at lines 338--339
-[] \T1/LinuxLibertineT-TLF/m/n/10 (+20) maxspeed:Double =
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 349--350
-[] \T1/LinuxLibertineT-TLF/m/n/10 (+20) min = (sqrt(d1)+sqrt(d2))*t-maxspeed*t*
-t/2-
- []
-
-
-Underfull \hbox (badness 6252) in paragraph at lines 351--352
-[] \T1/LinuxLibertineT-TLF/m/n/10 (+20) max = (sqrt(d1)+sqrt(d2))*t + maxspeed*
-t*t/2+
+[] \T1/LinuxLibertineT-TLF/m/n/10 (+20) maxspeed:Double = max(bc1.maxspeed,
  []
 
 
@@ -1378,13 +1351,13 @@ LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 18786 strings out of 492946
- 281189 string characters out of 3135512
- 410691 words of memory out of 3000000
+ 18783 strings out of 492946
+ 281111 string characters out of 3135512
+ 410696 words of memory out of 3000000
  21806 multiletter control sequences out of 15000+200000
- 171762 words of font info for 326 fonts, out of 3000000 for 9000
+ 171489 words of font info for 324 fonts, out of 3000000 for 9000
  1302 hyphenation exceptions out of 8191
- 60i,12n,94p,996b,483s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 60i,12n,94p,997b,483s stack positions out of 5000i,500n,10000p,200000b,50000s
 {C:/Program Files/MiKTeX 2.9/fonts/enc/dvips/libertine/lbtn_fygcup.enc}{C:/Pr
 ogram Files/MiKTeX 2.9/fonts/enc/dvips/libertine/lbtn_ncsllp.enc}{C:/Program Fi
 les/MiKTeX 2.9/fonts/enc/dvips/libertine/lbtn_naooyc.enc}{C:/Program Files/MiKT
@@ -1407,7 +1380,7 @@ rtxmi7.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/txfonts/rtxr.pfb><C:
 MiKTeX 2.9/fonts/type1/public/txfonts/txsya.pfb><C:/Program Files/MiKTeX 2.9/fo
 nts/type1/public/newtx/txsys.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/publi
 c/newtx/zxlri.pfb>
-Output written on mbbc.pdf (8 pages, 2747075 bytes).
+Output written on mbbc.pdf (8 pages, 2747177 bytes).
 PDF statistics:
  252 PDF objects out of 1000 (max. 8388607)
  48 named destinations out of 1000 (max. 500000)
